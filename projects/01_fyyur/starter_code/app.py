@@ -42,6 +42,68 @@ def get_form_errors(form):
   for message in form.errors.keys():
     flash(form.errors[message][0])
 
+def is_not_upcoming_show(start_time):
+    """ returns true if current_datetime is future """
+    present_time = datetime.now()
+    is_upcoming = datetime.strptime(str(start_time), '%Y-%m-%d %H:%M:%S') < present_time
+    print(is_upcoming)
+    return is_upcoming
+
+def get_shows_per_venue(venue):
+  past_shows = []
+  upcoming_shows = []
+  all_shows = {}
+  shows = Shows.query.filter_by(venue_id=venue.id).all()
+  print(shows)
+  if shows:
+    present = datetime.now()
+    for show in shows:
+      current_artist = Artist.query.filter_by(id=show.artist_id).first()
+      # show_start_time = datetime.strptime(str(show.start_time), '%Y-%m-%d %H:%M:%S')
+      if is_not_upcoming_show(show.start_time):
+        past_shows.append({
+          "artist_id": current_artist.id,
+          "artist_name": current_artist.name,
+          "artist_image_link": current_artist.image_link,
+          "start_time": str(show.start_time)
+        })
+      else:
+        upcoming_shows.append({
+          "artist_id": current_artist.id,
+          "artist_name": current_artist.name,
+          "artist_image_link": current_artist.image_link,
+          "start_time": str(show.start_time)
+        })
+  all_shows = {"past_shows": past_shows, "upcoming_shows": upcoming_shows}
+  return all_shows
+
+def get_shows_per_artist(artist):
+  past_shows = []
+  upcoming_shows = []
+  all_shows = {}
+  shows = Shows.query.filter_by(artist_id=artist.id).all()
+  print(shows)
+  if shows:
+    present = datetime.now()
+    for show in shows:
+      current_artist = Artist.query.filter_by(id=show.artist_id).first()
+      # show_start_time = datetime.strptime(str(show.start_time), '%Y-%m-%d %H:%M:%S')
+      if is_not_upcoming_show(show.start_time):
+        past_shows.append({
+          "artist_id": current_artist.id,
+          "artist_name": current_artist.name,
+          "artist_image_link": current_artist.image_link,
+          "start_time": str(show.start_time)
+        })
+      else:
+        upcoming_shows.append({
+          "artist_id": current_artist.id,
+          "artist_name": current_artist.name,
+          "artist_image_link": current_artist.image_link,
+          "start_time": str(show.start_time)
+        })
+  all_shows = {"past_shows": past_shows, "upcoming_shows": upcoming_shows}
+  return all_shows
 
 #----------------------------------------------------------------------------#
 # Models.
@@ -79,6 +141,9 @@ class Venue(db.Model):
         return f'<Venue id={self.id} name={self.name} city={self.city} state={self.state} address={self.address} \
                   phone={self.phone} image_link={self.image_link} facebook_link={self.facebook_link} website_link={self.website_link} seeking_description={self.seeking_description}\
                   looking_for_talent={self.looking_for_talent}>'
+    
+
+
 
 # #     # TODO: implement any missing fields, as a database migration using Flask-Migrate
 
@@ -145,6 +210,8 @@ def venues():
   venues = Venue.query.order_by('id').all()
   # print(venues)
   for venue in venues:
+    all_shows = get_shows_per_venue(venue)
+    upcoming_shows = []
     venue_locations
     current_venue = {}
     current_venue["city"] = venue.city
@@ -152,15 +219,17 @@ def venues():
     current_venue["id"] = venue.id
     current_venue["name"] = venue.name
     current_venue["num_upcoming_shows"] = 0
+    if len(all_shows["upcoming_shows"]) > 0:
+      current_venue["num_upcoming_shows"] = len(all_shows["upcoming_shows"])
     current_location = venue.city + venue.state
     if venue_locations.get(current_location):
       # print("=> Printing Venue_locations: "+ current_location + " " + str(venue_locations[current_location]))
-      current_venue_details = {"id": current_venue["id"], "name" : current_venue["name"], "num_upcoming_shows": 0}
+      current_venue_details = {"id": current_venue["id"], "name" : current_venue["name"], "num_upcoming_shows": current_venue["num_upcoming_shows"]}
       venue_locations[current_location][0]["venues"].append(current_venue_details)
       print("=> Current Venue: " + str(venue_locations[current_location][0]["venues"]))
     else:
       venue_locations[current_location] = [{"city": current_venue["city"], "state": current_venue["state"], 
-                                            "venues" : [{"id": current_venue["id"], "name" : current_venue["name"], "num_upcoming_shows": 0}]}]
+                                            "venues" : [{"id": current_venue["id"], "name" : current_venue["name"], "num_upcoming_shows": current_venue["num_upcoming_shows"]}]}]
       
 
   # print("**********" + str(venue_locations))
@@ -184,18 +253,19 @@ def search_venues():
     search_term = "%" + search_term + "%"
     # print(search_term)
     venue_search_results = Venue.query.filter(Venue.name.ilike(search_term)).all()
-    print(venue_search_results)
+    # print(venue_search_results)
 
     if venue_search_results:
       response["count"] = len(venue_search_results)
       response["data"] =[]
       for venue in venue_search_results:
+        all_shows = get_shows_per_venue(venue)
         response["data"].append(
           {"id": venue.id, 
           "name": venue.name,
-          "num_upcoming_shows": 0,
+          "num_upcoming_shows": len(all_shows.get("upcoming_shows")),
           })
-    print(response)
+    # print(response)
   except:
     flash("An error occurred while searching for " + search_term + ".")
 
@@ -212,17 +282,27 @@ def show_venue(venue_id):
   
   # print(current_genres)
   past_shows = []
+  upcoming_shows = []
   shows = Shows.query.filter_by(venue_id=venue_id).all()
   print(shows)
   if shows:
+    present = datetime.now()
     for show in shows:
       current_artist = Artist.query.filter_by(id=show.artist_id).first()
-      past_shows.append({
-        "artist_id": current_artist.id,
-        "artist_name": current_artist.name,
-        "artist_image_link": current_artist.image_link,
-        "start_time": str(show.start_time)
-      })
+      if is_not_upcoming_show(show.start_time):
+        past_shows.append({
+          "artist_id": current_artist.id,
+          "artist_name": current_artist.name,
+          "artist_image_link": current_artist.image_link,
+          "start_time": str(show.start_time)
+        })
+      else:
+        upcoming_shows.append({
+          "artist_id": current_artist.id,
+          "artist_name": current_artist.name,
+          "artist_image_link": current_artist.image_link,
+          "start_time": str(show.start_time)
+        })
   
   data1={
     "id": current_venue.id,
@@ -239,8 +319,8 @@ def show_venue(venue_id):
     "image_link": current_venue.image_link,
     "past_shows_count": len(past_shows),
     "past_shows": past_shows,
-    "upcoming_shows_count": len(past_shows),
-    "upcoming_shows": past_shows
+    "upcoming_shows_count": len(upcoming_shows),
+    "upcoming_shows": upcoming_shows
     }
   return render_template('pages/show_venue.html', venue=data1)
 
@@ -318,16 +398,6 @@ def artists():
   data = []
   for artist in artists:
     data.append({"id": artist.id, "name": artist.name})
-  # data=[{
-  #   "id": 4,
-  #   "name": "Guns N Petals",
-  # }, {
-  #   "id": 5,
-  #   "name": "Matt Quevedo",
-  # }, {
-  #   "id": 6,
-  #   "name": "The Wild Sax Band",
-  # }]
   return render_template('pages/artists.html', artists=data)
 
 @app.route('/artists/search', methods=['POST'])
@@ -335,6 +405,7 @@ def search_artists():
   # TODO: implement search on artists with partial string search. Ensure it is case-insensitive.
   # seach for "A" should return "Guns N Petals", "Matt Quevado", and "The Wild Sax Band".
   # search for "band" should return "The Wild Sax Band".
+  
   try:
     response = {}
     search_term = request.form.get('search_term')
@@ -346,10 +417,11 @@ def search_artists():
       response["count"] = len(artist_search_results)
       response["data"] =[]
       for artist in artist_search_results:
+        all_shows = get_shows_per_artist(artist)
         response["data"].append(
           {"id": artist.id, 
           "name": artist.name,
-          "num_upcoming_shows": 0,
+          "num_upcoming_shows": len(all_shows.get("upcoming_shows")),
           })
     print(response)
   except:
@@ -371,18 +443,27 @@ def show_artist(artist_id):
   print(current_genres)
   # print(current_genres)
   past_shows = []
+  upcoming_shows = []
   shows = Shows.query.filter_by(artist_id=artist_id).all()
   print(shows)
   if shows:
+    present = datetime.now()
     for show in shows:
       current_venue = Venue.query.filter_by(id=show.venue_id).first()
-      past_shows.append({
-        "venue_id": current_venue.id,
-        "venue_name": current_venue.name,
-        "venue_image_link": current_venue.image_link,
-        "start_time": str(show.start_time)
-      })
-
+      if is_not_upcoming_show(show.start_time):
+        past_shows.append({
+          "venue_id": current_venue.id,
+          "venue_name": current_venue.name,
+          "venue_image_link": current_venue.image_link,
+          "start_time": str(show.start_time)
+        })
+      else:
+        upcoming_shows.append({
+          "venue_id": current_venue.id,
+          "venue_name": current_venue.name,
+          "venue_image_link": current_venue.image_link,
+          "start_time": str(show.start_time)
+        })
   data={
     "id": current_artist.id,
     "name": current_artist.name,
@@ -397,8 +478,8 @@ def show_artist(artist_id):
     "image_link": current_artist.image_link,
     "past_shows_count": len(past_shows),
     "past_shows": past_shows,
-    "upcoming_shows_count": len(past_shows),
-    "upcoming_shows": past_shows
+    "upcoming_shows_count": len(upcoming_shows),
+    "upcoming_shows": upcoming_shows
   }
   return render_template('pages/show_artist.html', artist=data)
 
@@ -695,7 +776,7 @@ if not app.debug:
 
 @app.shell_context_processor
 def make_shell_context():
-    return dict(db=db, Venue=Artist, Artist=Artist, Shows=Shows)
+    return dict(db=db, Venue=Venue, Artist=Artist, Shows=Shows)
 
 #----------------------------------------------------------------------------#
 # Launch.

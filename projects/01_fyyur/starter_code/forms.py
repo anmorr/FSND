@@ -14,6 +14,28 @@ genres=[
             'Musical Theatre', 'Pop', 'Punk', 'R&B', 'Reggae', 'Rock n Roll', 'Soul', 'Other'
         ]
 
+genres2=[
+            ('Alternative', 'Alternative'),
+            ('Blues', 'Blues'),
+            ('Classical', 'Classical'),
+            ('Country', 'Country'),
+            ('Electronic', 'Electronic'),
+            ('Folk', 'Folk'),
+            ('Funk', 'Funk'),
+            ('Hip-Hop', 'Hip-Hop'),
+            ('Heavy Metal', 'Heavy Metal'),
+            ('Instrumental', 'Instrumental'),
+            ('Jazz', 'Jazz'),
+            ('Musical Theatre', 'Musical Theatre'),
+            ('Pop', 'Pop'),
+            ('Punk', 'Punk'),
+            ('R&B', 'R&B'),
+            ('Reggae', 'Reggae'),
+            ('Rock n Roll', 'Rock n Roll'),
+            ('Soul', 'Soul'),
+            ('Other', 'Other'),
+        ]
+
 class ShowForm(FlaskForm):
     artist_id = StringField(
         'artist_id'
@@ -35,7 +57,7 @@ class VenueForm(FlaskForm):
         'city', validators=[DataRequired()]
     )
     state = SelectField(
-        'state', validators=[DataRequired(), AnyOf(states)],
+        'state', validators=[DataRequired(), AnyOf(values=states)],
         choices=[
             ('AL', 'AL'),
             ('AK', 'AK'),
@@ -101,7 +123,7 @@ class VenueForm(FlaskForm):
     )
     genres = SelectMultipleField(
         # TODO implement enum restriction
-        'genres', validators=[DataRequired(), AnyOf(genres)],
+        'genres', validators=[DataRequired()],
         choices=[
             ('Alternative', 'Alternative'),
             ('Blues', 'Blues'),
@@ -147,7 +169,7 @@ class ArtistForm(FlaskForm):
         'city', validators=[DataRequired()]
     )
     state = SelectField(
-        'state', validators=[DataRequired(), AnyOf(states)],
+        'state', validators=[DataRequired(), AnyOf(values=states)],
         choices=[
             ('AL', 'AL'),
             ('AK', 'AK'),
@@ -210,7 +232,7 @@ class ArtistForm(FlaskForm):
         'image_link'
     )
     genres = SelectMultipleField(
-        'genres', validators=[DataRequired(), AnyOf(genres)],
+        'genres', validators=[DataRequired()],
         choices=[
             ('Alternative', 'Alternative'),
             ('Blues', 'Blues'),
