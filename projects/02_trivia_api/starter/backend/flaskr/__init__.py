@@ -141,6 +141,8 @@ def create_app(test_config=None):
   @app.route('/questions', methods=['POST'])
   def create_question():
 
+    print("====>", request.json)
+
     question = request.json.get('question')
     answer = request.json.get('answer')
     difficulty = request.json.get('difficulty')
@@ -194,7 +196,6 @@ def create_app(test_config=None):
       abort(422)
 
 
-
   '''
   @TODO: 
   Create a POST endpoint to get questions based on a search term. 
@@ -218,6 +219,7 @@ def create_app(test_config=None):
   '''
   @app.route('/categories/<int:category_id>/questions', methods=['GET'])
   def get_question_by_category(category_id):
+    print(request.json)
     try:
       current_questions = Question.query.filter_by(category=category_id).all()
       paginated_questions = paginate_questions(request, current_questions)
@@ -245,8 +247,34 @@ def create_app(test_config=None):
   one question at a time is displayed, the user is allowed to answer
   and shown whether they were correct or not. 
   '''
-
-  
+  @app.route('/quizzes', methods=['POST'])
+  def get_quiz_question():
+    print("reqest.json=> ", request.json)
+    previous_questions = request.json.get('previous_questions')
+    quiz_category = request.json.get('quiz_category')
+    print("previous_questions=> ", previous_questions)
+    print("quiz_category=> ", quiz_category)
+    if previous_questions:
+      if quiz_category['id'] is 0:
+        available_questions = Question.query.filter(~Question.id.in_(previous_questions)).all()
+      else:
+        available_questions = Question.query.filter_by(category=quiz_category['id']).filter(~Question.id.in_(previous_questions)).all()
+    else:
+      if quiz_category['id'] is 0:
+        available_questions = Question.query.filter(~Question.id.in_(previous_questions)).all()
+      else:
+        available_questions = Question.query.filter_by(category=quiz_category['id']).all()
+    print(available_questions)
+    if available_questions:
+      # end_index = (len(available_questions) - 1)
+      final_question = available_questions[random.randint(0,(len(available_questions) - 1))].format()
+      return jsonify({
+              'question': final_question
+          }), 200
+    else:
+      return jsonify({
+              'question': False,
+          }), 200
 
   '''
   @TODO: 
