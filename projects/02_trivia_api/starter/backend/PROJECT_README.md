@@ -185,13 +185,27 @@ The following API endpoints are outlined with sample request/response payloads.
             ]
             ```
 
+#### DELETE /questions/\<int:question_id\>
+- General:
+    - Endpoint to DELETE question using a question ID.
+        - Request Payload: None
+
+        - Response Payload: boolean value indicating success or failure.
+        ```
+        {
+          'success': True,
+        }
+        ```
+        
+
+
 #### GET /categories/\<int:category_id\>/questions
 
 - General:
     - Endpoint to get a paginated list of all questions from a given category by id.
         - Request Payload: None
 
-        - Response Payload: To retrieve from the Sports category, which has an ID of 6
+        - Response Payload: List of questions from the Sports category, which has an ID of 6.
         ```
         {
             "current_category": 6, 
