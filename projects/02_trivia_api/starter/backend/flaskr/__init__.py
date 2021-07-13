@@ -86,14 +86,14 @@ def create_app(test_config=None):
         # print(category)
         category_dict[category.id] = category.type
       # print(categories)
-      print(category_dict)
+      # print(category_dict)
       questions = Question.query.all()
       current_questions = paginate_questions(request, questions)
       # print(current_questions)
       if len(current_questions) == 0:
-        abort(404)
+        abort(422)
       
-      print("category_dict ======> ", current_questions)
+      # print("category_dict ======> ", current_questions)
 
       return jsonify({
           'categories': category_dict,
@@ -101,8 +101,9 @@ def create_app(test_config=None):
           'total_questions': len(questions),
           'current_category': current_questions[0]['category'],
       })
-    except:
-      abort(422)
+    except Exception as e:
+      if isinstance(e, HTTPException):
+        abort(e.code)
 
   '''
   @TODO: 
@@ -141,25 +142,25 @@ def create_app(test_config=None):
   @app.route('/questions', methods=['POST'])
   def create_question():
 
-    print("====>", request.json)
+    # print("====>", request.json)
 
     question = request.json.get('question')
     answer = request.json.get('answer')
     difficulty = request.json.get('difficulty')
     category = request.json.get('category')
     search = request.json.get('searchTerm')
-    print("search ========> ", search)
+    # print("search ========> ", search)
    
 
     if search:
         search_string = "%" + search + "%"
-        print(search_string)
+        # print(search_string)
         question_search_results = Question.query.filter(Question.question.ilike(search_string)).all()
-        print(question_search_results)
+        # print(question_search_results)
         if question_search_results:
           paginated_question_results = paginate_questions(request, question_search_results)
-          print("paginated_question_results===> ", paginated_question_results)
-          print("paginated_question_results category ===> ", paginated_question_results[0]['category'])
+          # print("paginated_question_results===> ", paginated_question_results)
+          # print("paginated_question_results category ===> ", paginated_question_results[0]['category'])
           return jsonify({
               'questions': paginated_question_results,
               'total_questions': len(question_search_results),
@@ -178,10 +179,10 @@ def create_app(test_config=None):
     
 
     try:
-      print("In the try block...")
+      # print("In the try block...")
       new_question = Question(question=question, answer=answer, 
                               difficulty=difficulty, category=category)
-      print(new_question)
+      # print(new_question)
       new_question.insert()
       questions = Question.query.order_by(Question.id).all()
       current_questions = paginate_questions(request, questions)
@@ -219,10 +220,13 @@ def create_app(test_config=None):
   '''
   @app.route('/categories/<int:category_id>/questions', methods=['GET'])
   def get_question_by_category(category_id):
-    print(request.json)
+    # print("CAT_QUESTIONS=====>", request.json)
     try:
-      current_questions = Question.query.filter_by(category=category_id).all()
+      # print("CAT_TRY=====> ", type(category_id))
+      current_questions = Question.query.filter_by(category=str(category_id)).all()
+      # print("CAT TRY CURRENT_Q=======> ", current_questions)
       paginated_questions = paginate_questions(request, current_questions)
+      # print("END CAT TRY=======>")
       if paginated_questions:
         return jsonify({
             'success': True,
@@ -233,6 +237,8 @@ def create_app(test_config=None):
     except Exception as e:
       if isinstance(e, HTTPException):
         abort(e.code)
+      else:
+        print(e)
 
 
 
@@ -249,11 +255,11 @@ def create_app(test_config=None):
   '''
   @app.route('/quizzes', methods=['POST'])
   def get_quiz_question():
-    print("reqest.json=> ", request.json)
+    # print("reqest.json=> ", request.json)
     previous_questions = request.json.get('previous_questions')
     quiz_category = request.json.get('quiz_category')
-    print("previous_questions=> ", previous_questions)
-    print("quiz_category=> ", quiz_category)
+    # print("previous_questions=> ", previous_questions)
+    # print("quiz_category=> ", quiz_category)
     if previous_questions:
       if quiz_category['id'] is 0:
         available_questions = Question.query.filter(~Question.id.in_(previous_questions)).all()
@@ -264,7 +270,7 @@ def create_app(test_config=None):
         available_questions = Question.query.filter(~Question.id.in_(previous_questions)).all()
       else:
         available_questions = Question.query.filter_by(category=quiz_category['id']).all()
-    print(available_questions)
+    # print(available_questions)
     if available_questions:
       # end_index = (len(available_questions) - 1)
       final_question = available_questions[random.randint(0,(len(available_questions) - 1))].format()

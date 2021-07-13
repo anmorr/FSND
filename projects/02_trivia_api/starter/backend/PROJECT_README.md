@@ -174,15 +174,18 @@ The following API endpoints are outlined with sample request/response payloads.
             ```
             - Response Payload - Returns a list of questions containing the requested substring, case-insensitive
             ```
-            [
-                {
-                    'id': 27, 
-                    'question': 'Sample Question', 
-                    'answer': 'Sample Answer', 
-                    'category': 2, 
-                    'difficulty': 3
-                }
-            ]
+            {
+                'current_category': '2', 
+                'questions': [
+                    {
+                        'answer': 'Sample Answer', 
+                        'category': '2', 
+                        'difficulty': 3, 
+                        'id': 165, 
+                        'question': 'Sample Question'
+                    }
+                ], 
+                'total_questions': 1}
             ```
 
 #### DELETE /questions/\<int:question_id\>
